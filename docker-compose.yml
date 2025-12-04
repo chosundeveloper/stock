@@ -1,8 +1,8 @@
 services:
   stock:
-    build: .
-    container_name: stock
-    restart: unless-stopped
+    image: stock:latest
+    container_name: stock-app
+    restart: always
     environment:
       - PORT=3000
       - NODE_ENV=production
