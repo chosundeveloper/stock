@@ -1,0 +1,26 @@
+services:
+  stock:
+    build: .
+    container_name: stock
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stock.rule=Host(`stock.chosundev.cloud`)"
+      - "traefik.http.routers.stock.entrypoints=websecure"
+      - "traefik.http.routers.stock.tls=true"
+      - "traefik.http.services.stock.loadbalancer.server.port=3000"
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    external: true
