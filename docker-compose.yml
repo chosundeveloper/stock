@@ -17,6 +17,7 @@ services:
       - "traefik.http.routers.stock.rule=Host(`stock.chosundev.cloud`)"
       - "traefik.http.routers.stock.entrypoints=websecure"
       - "traefik.http.routers.stock.tls=true"
+      - "traefik.http.routers.stock.tls.certresolver=letsencrypt"
       - "traefik.http.services.stock.loadbalancer.server.port=3000"
     networks:
       - traefik-network
