@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { useStockStore } from '../store/stockStore'
+import { getQuote } from '../services/stockApi'
 
 export default function StockCard({ stock, isSelected, onSelect, onRemove }) {
   const [loading, setLoading] = useState(true)
@@ -9,23 +9,29 @@ export default function StockCard({ stock, isSelected, onSelect, onRemove }) {
   const updateStock = useStockStore(state => state.updateStock)
 
   useEffect(() => {
+    let cancelled = false
     const fetchPrice = async () => {
       try {
         setLoading(true)
-        const response = await axios.get(`/api/stocks/price/${stock.symbol}`)
-        setData(response.data)
-        updateStock(stock.symbol, response.data)
+        const quote = await getQuote(stock.symbol)
+        if (cancelled) return
+        setData(quote)
+        setError(null)
+        updateStock(stock.symbol, quote)
       } catch (err) {
-        setError(err.message)
+        if (!cancelled) setError(err.message)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchPrice()
-    const interval = setInterval(fetchPrice, 60000) // Refresh every minute
+    const interval = setInterval(fetchPrice, 60000)
 
-    return () => clearInterval(interval)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [stock.symbol, updateStock])
 
   const isPositive = data?.change >= 0

@@ -1,36 +1,38 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
+import { getIntraday } from '../services/stockApi'
 
 export default function ChartView({ symbol }) {
-  const [interval, setInterval] = useState('5min')
+  const [interval, setChartInterval] = useState('5min')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    let cancelled = false
     const fetchChartData = async () => {
       try {
         setLoading(true)
-        const response = await axios.get(`/api/stocks/intraday`, {
-          params: {
-            symbol,
-            interval
-          }
-        })
-        setData(response.data.data || [])
+        const points = await getIntraday(symbol, interval)
+        if (cancelled) return
+        setData(points)
         setError(null)
       } catch (err) {
-        setError(err.message)
-        setData([])
+        if (!cancelled) {
+          setError(err.message)
+          setData([])
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchChartData()
+    return () => {
+      cancelled = true
+    }
   }, [symbol, interval])
 
   const intervals = ['1min', '5min', '15min', '30min', '60min']
@@ -43,7 +45,7 @@ export default function ChartView({ symbol }) {
           {intervals.map(int => (
             <button
               key={int}
-              onClick={() => setInterval(int)}
+              onClick={() => setChartInterval(int)}
               className={`px-3 py-1 rounded ${
                 interval === int
                   ? 'bg-blue-600 text-white'

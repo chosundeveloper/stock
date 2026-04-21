@@ -1,31 +1,36 @@
-import { useState } from 'react'
-import axios from 'axios'
+import { useEffect, useRef, useState } from 'react'
+import { searchSymbol } from '../services/stockApi'
 
 export default function SearchBar({ onSearch }) {
   const [input, setInput] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const debounceRef = useRef(null)
 
-  const handleInputChange = async (e) => {
-    const value = e.target.value
-    setInput(value)
-
-    if (value.length < 2) {
+  useEffect(() => {
+    if (input.trim().length < 2) {
       setSuggestions([])
       return
     }
 
-    setIsLoading(true)
-    try {
-      const response = await axios.get(`/api/stocks/search?q=${value}`)
-      setSuggestions(response.data.results || [])
-    } catch (err) {
-      console.error('Search error:', err)
-      setSuggestions([])
-    } finally {
-      setIsLoading(false)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const results = await searchSymbol(input.trim())
+        setSuggestions(results)
+      } catch (err) {
+        console.error('Search error:', err)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }, 250)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }
+  }, [input])
 
   const handleSelect = (symbol) => {
     onSearch(symbol)
@@ -49,7 +54,7 @@ export default function SearchBar({ onSearch }) {
           <input
             type="text"
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Search by stock symbol or company name (e.g., AAPL, Apple)"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -66,6 +71,11 @@ export default function SearchBar({ onSearch }) {
                   <div className="text-sm text-gray-600">{item.name}</div>
                 </button>
               ))}
+            </div>
+          )}
+          {isLoading && input.trim().length >= 2 && suggestions.length === 0 && (
+            <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 px-4 py-2 text-sm text-gray-400 z-10">
+              Searching…
             </div>
           )}
         </div>
