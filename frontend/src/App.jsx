@@ -1,49 +1,24 @@
-import { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
-import SearchBar from './components/SearchBar'
-import StockCard from './components/StockCard'
-import ChartView from './components/ChartView'
-import { useStockStore } from './store/stockStore'
+import TimeMachine from './pages/TimeMachine'
+import CalendarPage from './pages/Calendar'
+import Quote from './pages/Quote'
 
 function App() {
-  const [selectedSymbol, setSelectedSymbol] = useState(null)
-  const { stocks, addStock, removeStock } = useStockStore()
-
-  const handleSearch = (symbol) => {
-    if (!stocks.find(s => s.symbol === symbol)) {
-      addStock(symbol)
-    }
-    setSelectedSymbol(symbol)
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
       <Header />
-
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <SearchBar onSearch={handleSearch} />
-
-        {selectedSymbol && (
-          <div className="mt-8">
-            <ChartView symbol={selectedSymbol} />
-          </div>
-        )}
-
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Watched Stocks</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stocks.map(stock => (
-              <StockCard
-                key={stock.symbol}
-                stock={stock}
-                isSelected={stock.symbol === selectedSymbol}
-                onSelect={() => setSelectedSymbol(stock.symbol)}
-                onRemove={() => removeStock(stock.symbol)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+      <main className="px-4 py-10">
+        <Routes>
+          <Route path="/" element={<TimeMachine />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/quote" element={<Quote />} />
+          <Route path="*" element={<TimeMachine />} />
+        </Routes>
+      </main>
+      <footer className="mt-16 py-8 text-center text-sm text-slate-400 border-t border-slate-200">
+        시세·일정 데이터: Finnhub · Alpha Vantage · 투자 손실 책임지지 않음
+      </footer>
     </div>
   )
 }
